@@ -1,5 +1,5 @@
 {
-  "name": "http-api-assignment-ii",
+  "name": "headclanon",
   "version": "1.0.0",
   "engines": {
     "node": "14.15.4",
@@ -14,17 +14,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eadcock/http-api-assignment-ii.git"
+    "url": "git+https://github.com/eadcock/HeadClanon"
   },
   "author": "Eric Adcock",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/eadcock/http-api-assignment-ii/issues"
+    "url": "https://github.com/eadcock/HeadClanon/issues"
   },
-  "homepage": "https://github.com/eadcock/http-api-assignment-ii#readme",
+  "homepage": "https://github.com/eadcock/HeadClanon",
   "devDependencies": {
     "eslint": "^7.21.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-plugin-import": "^2.22.1"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1",
+    "xmlhttprequest": "^1.8.0"
   }
 }

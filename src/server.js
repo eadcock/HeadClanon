@@ -4,11 +4,12 @@ const query = require('querystring');
 
 const htmlHandler = require('./htmlResponses.js');
 const jsonHandler = require('./jsonResponses.js');
+const stats = require('./blaseballStats.js');
 
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
 const handlePost = (request, response, parsedUrl) => {
-  if (parsedUrl.pathname === '/addUser') {
+  if (parsedUrl.pathname === '/addTeam') {
     const body = [];
 
     request.on('error', (e) => {
@@ -35,8 +36,8 @@ const handleGet = (request, response, parsedUrl) => {
     case '/style.css':
       htmlHandler.getStyle(request, response);
       break;
-    case '/getUsers':
-      jsonHandler.getUsers(request, response);
+    case '/getTeams':
+      jsonHandler.getTeams(request, response);
       break;
     case '/':
       htmlHandler.getIndex(request, response);
@@ -50,8 +51,8 @@ const handleGet = (request, response, parsedUrl) => {
 
 const handleHead = (request, response, parsedUrl) => {
   switch (parsedUrl.pathname) {
-    case '/getUsers':
-      jsonHandler.getUsersMeta(request, response);
+    case '/getTeams':
+      jsonHandler.getTeamsMeta(request, response);
       break;
     default:
       jsonHandler.notFoundMeta(request, response);
@@ -78,3 +79,5 @@ const onRequest = (request, response) => {
 http.createServer(onRequest).listen(port);
 
 console.log(`Listening on 127.0.0.1: ${port}`);
+
+stats.loadTeams();

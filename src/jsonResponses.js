@@ -1,4 +1,5 @@
-const users = {};
+/* eslint-disable no-debugger */
+const stats = require('./blaseballStats.js');
 
 const respondJSON = (request, response, status, object) => {
   const headers = {
@@ -17,22 +18,20 @@ const respondJSONMeta = (request, response, status) => {
   response.end();
 };
 
-const getUsers = (request, response) => {
-  const responseJSON = {
-    users,
-  };
-
-  return respondJSON(request, response, 200, responseJSON);
+const getTeams = (request, response) => {
+  let responseJSON;
+  (async () => {
+    responseJSON = await stats.getTeams();
+    return respondJSON(request, response, 200, responseJSON);
+  })();
 };
 
-const getUsersMeta = (request, response) => respondJSONMeta(request, response, 200);
+const getTeamsMeta = (request, response) => respondJSONMeta(request, response, 200);
 
 const updateUser = (request, response) => {
   const newUser = {
     createdAt: Date.now(),
   };
-
-  users[newUser.createdAt] = newUser;
 
   return respondJSON(request, response, 201, newUser);
 };
@@ -48,6 +47,7 @@ const notFound = (request, response) => {
 
 const notFoundMeta = (request, response) => respondJSONMeta(request, response, 404);
 
+/*
 const addUser = (request, response, body) => {
   const responseJSON = {
     message: 'Name and age are both required',
@@ -76,12 +76,12 @@ const addUser = (request, response, body) => {
 
   return respondJSONMeta(request, response, responseCode);
 };
+*/
 
 module.exports = {
   notFound,
-  getUsers,
-  getUsersMeta,
+  getTeams,
+  getTeamsMeta,
   updateUser,
   notFoundMeta,
-  addUser,
 };
