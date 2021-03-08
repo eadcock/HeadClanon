@@ -4,7 +4,6 @@ const query = require('querystring');
 
 const htmlHandler = require('./htmlResponses.js');
 const jsonHandler = require('./jsonResponses.js');
-const stats = require('./blaseballStats.js');
 
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
@@ -79,5 +78,3 @@ const onRequest = (request, response) => {
 http.createServer(onRequest).listen(port);
 
 console.log(`Listening on 127.0.0.1: ${port}`);
-
-stats.loadTeams();

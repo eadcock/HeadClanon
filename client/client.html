@@ -100,6 +100,7 @@
       userForm.addEventListener('submit', getUsers); */
 
       document.querySelector('button').addEventListener('click', populateTeamsMenu);
+      populateTeamsMenu();
     };
 
     function populateTeamsMenu() {
@@ -109,14 +110,33 @@
       xhr.setRequestHeader('Accept', 'application/json');
       xhr.onload = (xhr) => {
         const res = JSON.parse(xhr.target.response);
-        for(let div in Object.keys(res)) {
-          console.log(div);
-          /*
-          for(let j = 0; j < Object.keys(res[i]).length; j++) {
-            console.log('name' + res[i].fullName);
-            document.querySelector('#content').innerHTML += res[i].fullName + ", ";
+        console.log(res);
+        for(let div of Object.keys(res)) {
+          for(let team_id of Object.keys(res[div])) {
+            const team = res[div][team_id];
+            if(div === 'uncategorized') continue;
+            let table;
+            switch(team.division) {
+              case "Wild High":
+                table = document.querySelector('#wild-high');
+                break;
+              case "Wild Low":
+                table = document.querySelector('#wild-low');
+                break;
+              case "Mild High":
+                table = document.querySelector('#mild-high');
+                break;
+              case "Mild Low":
+                table = document.querySelector('#mild-low');
+                break;
+            }
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.innerHTML = team.full_name;
+
+            tr.appendChild(td);
+            table.appendChild(tr);
           }
-          */
         }
       };
 
@@ -129,10 +149,21 @@
 <body>
   <section id="top">
     <h1>HeadClanon</h1>
-    <button>Get Teams</button>
+    <p>A tool to keep track of <a href="https://www.blaseball.com">Blaseball</a> canon lore! (all canon is canon lore)</p>
   </section>
   <section id="content">
-    
+    <table id="wild-high">
+      <tr><th>Wild High</th></tr>
+    </table>
+    <table id="mild-high">
+      <tr><th>Mild High</th></tr>
+    </table>
+    <table id="wild-low">
+      <tr><th>Wild Low</th></tr>
+    </table>
+    <table id="mild-low">
+      <tr><th>Mild Ligh</th></tr>
+    </table>
   </section>
 </body>
 </html>
