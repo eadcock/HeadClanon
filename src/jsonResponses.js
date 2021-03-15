@@ -28,6 +28,30 @@ const getTeams = (request, response) => {
 
 const getTeamsMeta = (request, response) => respondJSONMeta(request, response, 200);
 
+const getTeam = (request, response, body) => {
+  console.log(body);
+  let responseJSON = {
+    message: 'Team id is required',
+  };
+
+  if (!body.team) {
+    responseJSON.id = 'missingParams';
+    return respondJSON(request, response, 400, responseJSON);
+  }
+
+  let responseCode = 200;
+
+  (async () => {
+    responseJSON = await stats.getTeam(body.team);
+    if (!responseJSON) {
+      responseCode = 400;
+      responseJSON = {};
+      responseJSON.message = 'Recieved invalid team id';
+    }
+    return respondJSON(request, response, responseCode, responseJSON);
+  })();
+};
+
 const updateUser = (request, response) => {
   const newUser = {
     createdAt: Date.now(),
@@ -82,6 +106,7 @@ module.exports = {
   notFound,
   getTeams,
   getTeamsMeta,
+  getTeam,
   updateUser,
   notFoundMeta,
 };

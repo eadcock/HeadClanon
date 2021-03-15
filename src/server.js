@@ -8,7 +8,7 @@ const jsonHandler = require('./jsonResponses.js');
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
 const handlePost = (request, response, parsedUrl) => {
-  if (parsedUrl.pathname === '/addTeam') {
+  const grabData = (callback) => {
     const body = [];
 
     request.on('error', (e) => {
@@ -25,18 +25,29 @@ const handlePost = (request, response, parsedUrl) => {
       const bodyString = Buffer.concat(body).toString();
       const bodyParams = query.parse(bodyString);
 
-      jsonHandler.addUser(request, response, bodyParams);
+      callback(request, response, bodyParams);
     });
+  };
+
+  switch (parsedUrl.pathname) {
+    default:
+      jsonHandler.notFound(request, response);
   }
 };
 
 const handleGet = (request, response, parsedUrl) => {
+  let params;
   switch (parsedUrl.pathname) {
     case '/style.css':
       htmlHandler.getStyle(request, response);
       break;
     case '/getTeams':
       jsonHandler.getTeams(request, response);
+      break;
+    case '/team':
+      params = parsedUrl.search;
+      params = params.slice(1);
+      jsonHandler.getTeam(request, response, query.parse(params));
       break;
     case '/':
       htmlHandler.getIndex(request, response);
