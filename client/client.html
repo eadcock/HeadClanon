@@ -1,98 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Our simple HTTP server</title>
+  <title>HeadClanon</title>
+  <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&amp;family=Open+Sans:wght@400;700&amp;display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
   <script type="text/babel">
-    let activeDiv = document.querySelector('#homeWrapper');
-
-    const handleResponse = (xhr, parseResponse) => {
-      /*const content = document.querySelector('#content');
-
-      switch(xhr.status) {
-        case 200:
-          content.innerHTML = '<b>Success!</b>';
-          break;
-        case 201:
-          content.innerHTML = '<b>Created!</b>';
-          break;
-        case 204:
-          content.innerHTML = '<b>Updated (No Content)</b>';
-          break;
-        case 400:
-          content.innerHTML = '<b>Bad Request :(</b>';
-          break;
-        case 404:
-          content.innerHTML = '<b>Resource Not Found :(</b>';
-          break;
-        default:
-          content.innerHTML = '<p>Error code not implemented by client!</p>';
-          break;
-      }
-      
-      if(parseResponse) {
-        const obj = JSON.parse(xhr.response);
-
-        if(obj.message) {
-          content.innerHTML += `<p>Message: ${obj.message}</p>`;
-        } else {
-          content.innerHTML += `<p>${xhr.response}</p>`;
-        }
-      } 
-      */
-    };
-
-    const requestUpdate = (e, userForm) => {
-      /*
-      const url = userForm.querySelector('#urlField').value;
-      const method = userForm.querySelector('#methodSelect').value;
-
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, url);
-      xhr.setRequestHeader('Accept', 'application/json');
-      if(method === 'get') {
-        xhr.onload = _ => handleResponse(xhr, true);
-      } else {
-        xhr.onload = _ => handleResponse(xhr, false);
-      }
-
-      xhr.send();
-
-      e.preventDefault();
-      return false;
-      */
-    };
-
-    const sendPost = (e, nameForm) => {
-      /*
-      e.preventDefault();
-
-      const nameAction = nameForm.getAttribute('action');
-      const nameMethod = nameForm.getAttribute('method');
-
-      const nameField = nameForm.querySelector('#nameField');
-      const ageField = nameForm.querySelector('#ageField');
-
-      const xhr = new XMLHttpRequest();
-      xhr.open(nameMethod, nameAction);
-
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-      xhr.onload = () => handleResponse(xhr);
-
-      const formData = `name=${nameField.value}&age=${ageField.value}`;
-      xhr.send(formData);
-
-      return false;
-      */
-    };
+    let activeDiv = document.querySelector('#home-wrapper');
+    let currentTeam;
+    let currentPlayer;
+    let currentAddId;
 
     const init = _ => {
+      document.querySelector('#top h1').addEventListener('click', (e) => {
+        window.location.assign(document.location.origin);
+      });
+
       populateTeamsMenu();
+
+      document.querySelector('#roster-team').addEventListener('click', (e) => {
+        currentAddId = currentTeam.id;
+        populateTeamInfo(currentTeam);
+      });
+
+      document.querySelector('#entries-add').addEventListener('click', (e) => {
+        document.querySelector('#add-rumor').style.display = 'block';
+      })
+
+      document.querySelector('#modal-content').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const lore = document.querySelector('textarea').value;
+        const title = document.querySelector('#title').value;
+        const xhr = new XMLHttpRequest();
+        xhr.open('post', '/lore');
+
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+        xhr.onload = (xhr) => {
+          document.querySelector('#add-rumor').style.display = 'none';
+          getLore(currentAddId);
+        }
+
+        xhr.send(`id=${currentAddId}&title=${title}&lore=${lore}`);
+      });
     };
+
+    function insertEmoji(emojiString) {
+      const code = parseInt(emojiString, 16);
+      return code ? String.fromCodePoint(code) : emojiString;
+    }
 
     function populateTeamsMenu() {
       const xhr = new XMLHttpRequest();
@@ -133,7 +91,8 @@
             input.id = team_id;
             input.value = `/team?team=${team_id}`;
             input.addEventListener('click', getTeamPage);
-            input.innerText = team.fullName;
+            const code = parseInt(team.emoji, 16);
+            input.innerText = team.fullName + " " + (code ? String.fromCodePoint(code) : team.emoji);
 
             const p = document.createElement('p');
             div.appendChild(label);
@@ -150,28 +109,76 @@
       activeDiv = newActive;
     }
 
+    function displayRoster(parent, roster) {
+      const lineup = Object.keys(roster);
+      for(const player of lineup) {
+        const p = document.createElement('button');
+        p.innerText = roster[player].name;
+        p.value = `/player?id=${roster[player].id}`;
+        p.addEventListener('click', getPlayerPage);
+        parent.appendChild(p);
+      }
+    }
+
     function getPlayers(teamId) {
       const xhr = new XMLHttpRequest();
       xhr.open('get', `/players?team=${teamId}`);
+      xhr.setRequestHeader('Accept', 'application/json');
 
       xhr.onload = (xhr) => {
         //process data
         const response = JSON.parse(xhr.target.response);
+        console.log(response);
+        // format and display
+
+        displayRoster(document.querySelector('#lineup'), response.lineup);
+        displayRoster(document.querySelector('#rotation'), response.rotation);
+        if(response.bullpen) {
+          displayRoster(document.querySelector('#bullpen'), response.bullpen);
+        }
+        if (response.bench) {
+          displayRoster(document.querySelector('#bench'), response.bench);
+        }
       }
+
+
+      xhr.send();
+    }
+
+    function getPlayerPage(e) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('get', e.target.value);
+      xhr.setRequestHeader('Accept', 'application/json');
+
+      xhr.onload = (xhr) => {
+        const response = JSON.parse(xhr.target.response);
+        currentPlayer = response;
+        currentAddId = response.id;
+
+        populatePlayerInfo(response);
+      }
+
+      xhr.send();
     }
 
     function getTeamPage(e) {
       const xhr = new XMLHttpRequest();
       xhr.open('get', e.target.value);
+      xhr.setRequestHeader('Accept', 'application/json');
 
       xhr.onload = (xhr) => {
         // process data
         const response = JSON.parse(xhr.target.response);
+        currentTeam = response;
+        currentAddId = response.id;
         console.log(response);
 
         // format and display data
-        const teamPage = document.querySelector('#teamPageWrapper');
+        const teamPage = document.querySelector('#content-page-wrapper');
 
+        populateTeamInfo(response);
+
+        getPlayers(response.id);
         clearContent(teamPage);
         teamPage.style.display = getComputedStyle(document.documentElement,null).getPropertyValue('--team-display');
       };
@@ -179,12 +186,69 @@
       xhr.send();
     }
 
+    function populateTeamInfo(team) {
+      const teamName = document.querySelector('#team-name');
+      const emoji = insertEmoji(team.emoji);
+      teamName.innerHTML = `${emoji}${team.fullName}${emoji}`;
+      const slogan = document.querySelector('#slogan');
+      slogan.style.display = 'inherit';
+      slogan.innerHTML = team.slogan;
+      const rosterName = document.querySelector('#roster-team');
+      rosterName.innerHTML = `${emoji}${team.nickname}`;
+      rosterName.value = team.id;
+    }
+
+    function populatePlayerInfo(player) {
+      getLore(player.id);
+      const teamName = document.querySelector('#team-name');
+      teamName.innerHTML = player.name;
+      const slogan = document.querySelector('#slogan');
+      slogan.style.display = 'none';
+      const about = document.querySelector('#about');
+      about.innerHTML = 'Information about ' + player.name;
+    }
+
+    function removeLoreNodes() {
+      const entries = document.querySelector('#entries');
+      while(entries.hasChildNodes()) {
+        entries.firstChild.remove();
+      }
+    }
+
+    function getLore(id) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('get', `/lore?id=${id}`);
+
+      xhr.onload = (xhr) => {
+        const response = JSON.parse(xhr.target.response);
+        console.log(response);
+        const keys = Object.keys(response);
+        const entries = document.querySelector('#entries');
+        removeLoreNodes();
+        keys.forEach((k) => {
+          const h4 = document.createElement('h4');
+          const p = document.createElement('p');
+          h4.id = k;
+          h4.innerText = response[k].title;
+          p.innerText = response[k].lore;
+          entries.appendChild(h4);
+          entries.appendChild(p);
+        });
+      };
+
+      xhr.send();
+    }
+
+    function addLore(e) {
+      
+    }
+
     window.onload = init;
   </script>
 </head>
 <body>
   <section id="top">
-    <button id="home" class="centered-block"><h1>HeadClanon</h1></button>
+    <h1>HeadClanon</h1>
     <p>A tool to keep track of <a href="https://www.blaseball.com">Blaseball</a> canon lore!</p>
   </section>
   <section id="content">
@@ -202,9 +266,9 @@
         <h2>Mild Ligh</h2>
       </div>
     </div>
-    <div id="team-page-wrapper">
+    <div id="content-page-wrapper">
       <aside id="players">
-        <h2>Roster</h2>
+        <h3 id="roster-team">Name</h3>
         <div id="lineup">
           <h3>Lineup</h3>
         </div>
@@ -218,13 +282,35 @@
           <h3>Bench</h3>
         </div>
       </aside>
-      <div id="team-page-main">
+      <div id="content-page-main">
         <div id="header-wrapper">
-          <h1 id="teamName">Team Name</h1>
+          <h1 id="team-name">Team Name</h1>
           <h2 id="slogan">Slogan!</h2>
+        </div>
+        <h3 id="about-heading">About</h3>
+        <p id="about"></p>
+        <h3 id="entries-heading">Rumors</h3>
+        <button id="entries-add">Add Rumor</button>
+        <div id="entries">
+
         </div>
       </div>
     </div>
+  </section>
+  <section id="add-rumor">
+    <form id="modal-content">
+      <div id="modal-header">Add Rumor</div>
+      <div id="modal-body">
+        <label for="title">Enter the title of your rumor:</label>
+        <input id="title" type="text" />
+        <label for="rumor">Type your rumor below:</label>
+        <textarea name="rumor" rows="10" cols="100"></textarea>
+      </div>
+      <div id="modal-footer">
+        <input type="button" id="cancel" value="Cancel"></input>
+        <input type="submit"></input>
+      </div>
+    </form>
   </section>
 </body>
 </html>

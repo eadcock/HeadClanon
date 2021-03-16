@@ -30,6 +30,9 @@ const handlePost = (request, response, parsedUrl) => {
   };
 
   switch (parsedUrl.pathname) {
+    case '/lore':
+      grabData(jsonHandler.addLore);
+      break;
     default:
       jsonHandler.notFound(request, response);
   }
@@ -45,9 +48,20 @@ const handleGet = (request, response, parsedUrl) => {
       jsonHandler.getTeams(request, response);
       break;
     case '/team':
-      params = parsedUrl.search;
-      params = params.slice(1);
+      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
       jsonHandler.getTeam(request, response, query.parse(params));
+      break;
+    case '/players':
+      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
+      jsonHandler.getPlayers(request, response, query.parse(params));
+      break;
+    case '/player':
+      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
+      jsonHandler.getPlayer(request, response, query.parse(params));
+      break;
+    case '/lore':
+      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
+      jsonHandler.getLore(request, response, query.parse(params));
       break;
     case '/':
       htmlHandler.getIndex(request, response);
