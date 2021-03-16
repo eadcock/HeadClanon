@@ -5,6 +5,7 @@
 
 * {
   font-family: "Lora","Courier New",monospace,serif;
+  color: white;
 }
 
 html, body {
@@ -13,6 +14,7 @@ html, body {
   margin: 0;
   padding: 0;
   background-color: #000;
+  color: white;
 }
 
 .centered-block {
@@ -27,7 +29,7 @@ html, body {
 }
 
 #top h1 {
-  font-size: 2em;
+  font-size: 50pt;
   cursor: pointer;
 }
 
@@ -44,6 +46,10 @@ html, body {
   grid-template-areas: 
     "wild-high mild-high"
     "wild-low  mild-low";
+}
+
+.division-heading {
+  font-size: 30px;
 }
 
 #wild-high {
@@ -63,12 +69,26 @@ html, body {
 }
 
 button {
-  font-size: large;
+  font-size: 15pt;
   display: block;
   margin: auto;
-  margin-bottom: 0.5em;
-  width: 50%;
+  width: 60%;
   padding: 10px;
+  border: none;
+  font-weight:500;
+  text-align: left;
+  cursor: pointer;
+  background-color: #000;
+}
+
+button:hover {
+  background-color: hsla(0,0%,39.6%,.65) !important;
+}
+
+#entries-add {
+  border-radius: 12px;
+  display: inline-block;
+  width: auto;
 }
 
 label {
@@ -77,13 +97,19 @@ label {
 
 #content-page-wrapper {
   display: none;
-  border: 1px solid black;
+  border-top: 2px solid #fff;
 }
 
 #content-page-main {
   flex: 1;
   overflow: auto;
   padding: 2em;
+  display: flex;
+  flex-direction: column;
+}
+
+span {
+  text-align: left;
 }
 
 #content-page-wrapper h1,
@@ -93,14 +119,12 @@ label {
 
 #content-page-wrapper h3 {
   text-align: left;
-}
-
-#content-page-wrapper > aside {
-  width: 20%;
+  display: inline;
 }
 
 #players {
-  border: 1px solid black;
+  width: 25%;
+  border-right: 2px solid #fff;
 }
 
 #players button {
@@ -111,6 +135,10 @@ label {
 }
 
 #players h3 {
+  height: 2em;
+}
+
+#players * {
   text-align: center;
 }
 
@@ -129,10 +157,8 @@ label {
 
 #modal-content {
   position: relative;
-  background-color: #fefefe;
   margin: auto;
   padding: 0;
-  border: 1px solid #888;
   top: 25%;
   width: 80%;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
@@ -140,27 +166,24 @@ label {
 
 #modal-body {
   padding: 1.4em;
+  background-color: rgba(30,30,30,1);
 }
 
 #modal-header,
 #modal-footer {
   height: 2em;
+  background-color: #000;
 }
 
 #modal-header {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(0, 0, 0.3);
-  background-color: #5cb85c;
 }
 
 #modal-footer {
   display: flex;
   /* Push the buttons to the right */
   justify-content: flex-end;
-  /* Border */
-  border-top: 1px solid rgba(0, 0, 0.3);
-  background-color: #5cb85c;
 }
 
 textarea {
@@ -168,6 +191,11 @@ textarea {
   height: auto;
   width: 100%;
   margin-top: 0.5em;
+}
+
+textarea,
+input {
+  color: black;
 }
 
 #modal-content label {
@@ -186,4 +214,31 @@ textarea {
   color: black;
   text-decoration: none;
   cursor: pointer;
+}
+
+#roster-team {
+  cursor: pointer;
+}
+
+#roster-loading {
+  animation: breathe;
+  animation-duration: 2s;
+  animation-timing-function: ease-in-out;
+  animation-delay: 0;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes breathe {
+  0% {
+    color: #fff;
+  }
+
+  50% {
+    color: rgb(109, 109, 109);
+  }
+
+  100% {
+    color: #fff;
+  }
 }

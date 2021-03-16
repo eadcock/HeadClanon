@@ -18,16 +18,35 @@ const respondJSONMeta = (request, response, status) => {
   response.end();
 };
 
+// queries blaseballStats.js for a JSON object containing every blaseball team
 const getTeams = (request, response) => {
   let responseJSON;
   (async () => {
+    let statusCode = 200;
     responseJSON = await stats.getTeams();
-    return respondJSON(request, response, 200, responseJSON);
+    if (responseJSON === 500) {
+      statusCode = 500;
+      responseJSON = {
+        message: 'Blaseball database did not respond.',
+      };
+    }
+    return respondJSON(request, response, statusCode, responseJSON);
   })();
 };
 
-const getTeamsMeta = (request, response) => respondJSONMeta(request, response, 200);
+// Handles the head request for getTeams
+const getTeamsMeta = (request, response) => {
+  (async () => {
+    let statusCode = 200;
+    const responseJSON = await stats.getTeams();
+    if (responseJSON === 500) {
+      statusCode = 500;
+    }
+    return respondJSONMeta(request, response, statusCode);
+  })();
+};
 
+// Queries blaseballStats.js for a specific team by id
 const getTeam = (request, response, body) => {
   let responseJSON = {
     message: 'Team id is required',
@@ -46,11 +65,36 @@ const getTeam = (request, response, body) => {
       responseCode = 400;
       responseJSON = {};
       responseJSON.message = 'Recieved invalid team id';
+    } else if (responseJSON === 500) {
+      responseCode = 500;
+      responseJSON = {
+        message: 'Blaseball database did not respond.',
+      };
     }
     return respondJSON(request, response, responseCode, responseJSON);
   })();
 };
 
+// Handles the head request for getTeam
+const getTeamMeta = (request, response, body) => {
+  if (!body.team) {
+    return respondJSONMeta(request, response, 400);
+  }
+
+  let responseCode = 200;
+
+  return (async () => {
+    const responseJSON = await stats.getTeam(body.team);
+    if (!responseJSON) {
+      responseCode = 400;
+    } else if (responseJSON === 500) {
+      responseCode = 500;
+    }
+    return respondJSONMeta(request, response, responseCode);
+  })();
+};
+
+// Queries blaseballStats.js for a JSON including every blaseball player on a single team
 const getPlayers = (request, response, body) => {
   let responseJSON = {
     message: 'Team id is required',
@@ -74,6 +118,24 @@ const getPlayers = (request, response, body) => {
   })();
 };
 
+// Handles the head response for getPlayers
+const getPlayersMeta = (request, response, body) => {
+  if (!body.team) {
+    return respondJSONMeta(request, response, 400);
+  }
+
+  let responseCode = 200;
+
+  return (async () => {
+    const responseJSON = await stats.getTeamRoster(body.team);
+    if (!responseJSON) {
+      responseCode = 400;
+    }
+    return respondJSONMeta(request, response, responseCode);
+  })();
+};
+
+// Queries blaseballStats.js for information about a signle player by id
 const getPlayer = (request, response, body) => {
   let responseJSON = {
     message: 'Player id is required',
@@ -97,6 +159,24 @@ const getPlayer = (request, response, body) => {
   })();
 };
 
+// Handles the head request for getPlayer
+const getPlayerMeta = (request, response, body) => {
+  if (!body.id) {
+    return respondJSONMeta(request, response, 400);
+  }
+
+  let responseCode = 200;
+
+  return (async () => {
+    const responseJSON = await stats.getPlayer(body.id);
+    if (!responseJSON) {
+      responseCode = 400;
+    }
+    return respondJSONMeta(request, response, responseCode);
+  })();
+};
+
+// Queries loreTracker.js for all of the lore entries of a team or player
 const getLore = (request, response, body) => {
   let responseJSON = {
     message: 'Team or player id is required',
@@ -119,6 +199,23 @@ const getLore = (request, response, body) => {
   return respondJSON(request, response, responseCode, responseJSON);
 };
 
+// Handles the head response for getLore
+const getLoreMeta = (request, response, body) => {
+  if (!body.id) {
+    return respondJSONMeta(request, response, 400);
+  }
+
+  let responseCode = 200;
+
+  const responseJSON = lore.getLore(body.id);
+  if (!responseJSON) {
+    responseCode = 400;
+  }
+
+  return respondJSONMeta(request, response, responseCode);
+};
+
+// Tells loreTracker.js to add a lore entry for a player or team
 const addLore = (request, response, body) => {
   const responseJSON = {
     message: 'Id, title, and lore are all required',
@@ -133,22 +230,6 @@ const addLore = (request, response, body) => {
 
   responseJSON.message = 'Created Successfully!';
   return respondJSON(request, response, 201, responseJSON);
-};
-
-const updateLore = (request, response, body) => {
-  const responseJSON = {
-    message: 'playerId/teamId, loreId, and lore are all required',
-  };
-
-  if (!body.id || !body.lore || !body.loreId) {
-    responseJSON.id = 'missingParams';
-    return respondJSON(request, response, 400, responseJSON);
-  }
-
-  lore.updateLore(body.id, body.loreId, body.lore);
-
-  responseJSON.message = 'Updated Successfully!';
-  return respondJSONMeta(request, response, 204);
 };
 
 const notFound = (request, response) => {
@@ -167,10 +248,13 @@ module.exports = {
   getTeams,
   getTeamsMeta,
   getTeam,
+  getTeamMeta,
   notFoundMeta,
   getPlayers,
+  getPlayersMeta,
   getPlayer,
+  getPlayerMeta,
   getLore,
+  getLoreMeta,
   addLore,
-  updateLore,
 };

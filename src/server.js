@@ -7,7 +7,9 @@ const jsonHandler = require('./jsonResponses.js');
 
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
+// Handles POST requests
 const handlePost = (request, response, parsedUrl) => {
+  // Method to parse the body of a POST request
   const grabData = (callback) => {
     const body = [];
 
@@ -29,6 +31,7 @@ const handlePost = (request, response, parsedUrl) => {
     });
   };
 
+  // Directs traffic to the correct method
   switch (parsedUrl.pathname) {
     case '/lore':
       grabData(jsonHandler.addLore);
@@ -38,8 +41,11 @@ const handlePost = (request, response, parsedUrl) => {
   }
 };
 
+// Handles GET requests
 const handleGet = (request, response, parsedUrl) => {
-  let params;
+  // if there are any params, parse them
+  const params = parsedUrl.search ? query.parse(parsedUrl.search.slice(1)) : '';
+  // direct traffic to the correct method
   switch (parsedUrl.pathname) {
     case '/style.css':
       htmlHandler.getStyle(request, response);
@@ -48,20 +54,16 @@ const handleGet = (request, response, parsedUrl) => {
       jsonHandler.getTeams(request, response);
       break;
     case '/team':
-      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
-      jsonHandler.getTeam(request, response, query.parse(params));
+      jsonHandler.getTeam(request, response, params);
       break;
     case '/players':
-      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
-      jsonHandler.getPlayers(request, response, query.parse(params));
+      jsonHandler.getPlayers(request, response, params);
       break;
     case '/player':
-      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
-      jsonHandler.getPlayer(request, response, query.parse(params));
+      jsonHandler.getPlayer(request, response, params);
       break;
     case '/lore':
-      params = parsedUrl.search ? parsedUrl.search.slice(1) : '';
-      jsonHandler.getLore(request, response, query.parse(params));
+      jsonHandler.getLore(request, response, params);
       break;
     case '/':
       htmlHandler.getIndex(request, response);
@@ -73,10 +75,25 @@ const handleGet = (request, response, parsedUrl) => {
   }
 };
 
+// Handle HEAD requests
 const handleHead = (request, response, parsedUrl) => {
+  // if there are any params, parse them
+  const params = parsedUrl.search ? query.parse(parsedUrl.search.slice(1)) : '';
   switch (parsedUrl.pathname) {
     case '/getTeams':
       jsonHandler.getTeamsMeta(request, response);
+      break;
+    case '/team':
+      jsonHandler.getTeamMeta(request, response, params);
+      break;
+    case '/players':
+      jsonHandler.getPlayersMeta(request, response, params);
+      break;
+    case '/player':
+      jsonHandler.getPlayerMeta(request, response, params);
+      break;
+    case '/lore':
+      jsonHandler.getLoreMeta(request, response, params);
       break;
     default:
       jsonHandler.notFoundMeta(request, response);
@@ -84,6 +101,7 @@ const handleHead = (request, response, parsedUrl) => {
   }
 };
 
+// Direct request traffic
 const onRequest = (request, response) => {
   const parsedUrl = url.parse(request.url);
 

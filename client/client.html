@@ -7,64 +7,103 @@
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&amp;family=Open+Sans:wght@400;700&amp;display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
   <script type="text/babel">
+    // global variables to help keep track of information to avoid redundant api calls
     let activeDiv = document.querySelector('#home-wrapper');
     let currentTeam;
     let currentPlayer;
     let currentAddId;
 
     const init = _ => {
+      // set up the title bar to take the user back to the home page when clicked
       document.querySelector('#top h1').addEventListener('click', (e) => {
         window.location.assign(document.location.origin);
       });
 
       populateTeamsMenu();
 
+      // set up the roster title to take the user back to the team home page when clicked
       document.querySelector('#roster-team').addEventListener('click', (e) => {
         currentAddId = currentTeam.id;
         populateTeamInfo(currentTeam);
       });
 
+      // set up the "Add Rumor" button to bring up the add rumor dialog
       document.querySelector('#entries-add').addEventListener('click', (e) => {
         document.querySelector('#add-rumor').style.display = 'block';
-      })
+      });
 
+      // Make the request to add lore when the add rumor dialog is complete
       document.querySelector('#modal-content').addEventListener('submit', (e) => {
         e.preventDefault();
+        // get lore and title
         const lore = document.querySelector('textarea').value;
+        document.querySelector('textarea').value = '';
         const title = document.querySelector('#title').value;
-        const xhr = new XMLHttpRequest();
-        xhr.open('post', '/lore');
+        document.querySelector('#title').value = '';
 
-        xhr.setRequestHeader('Accept', 'application/json');
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        // if there isn't any lore or there isn't a title, simply do nothing
+        if(lore && title) {
+          const xhr = new XMLHttpRequest();
+          xhr.open('post', '/lore');
 
-        xhr.onload = (xhr) => {
+          xhr.setRequestHeader('Accept', 'application/json');
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+          xhr.onload = (xhr) => {
+            document.querySelector('#add-rumor').style.display = 'none';
+            getLore(currentAddId);
+          }
+
+          xhr.send(`id=${currentAddId}&title=${title}&lore=${lore}`);
+        } else {
           document.querySelector('#add-rumor').style.display = 'none';
-          getLore(currentAddId);
         }
+      });
 
-        xhr.send(`id=${currentAddId}&title=${title}&lore=${lore}`);
+      // Make the cancel button exit the add rumor dialog
+      document.querySelector('#cancel').addEventListener('click', (e) => {
+        document.querySelector('#add-rumor').style.display = 'none';
+        document.querySelector('#title').value = '';
+        document.querySelector('textarea').value = '';
       });
     };
 
+    // helper method to make a request to the server
+    function makeRequest(method, address, callback) {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, address);
+
+      xhr.setRequestHeader('Accept', 'application/json');
+
+      xhr.onload = (xhr) => {
+        const response = JSON.parse(xhr.target.response);
+        callback(response);
+      }
+
+      xhr.send();
+    }
+
+    // a helper function to turn an emoji string into an emoji
+    // annoyingly the Tokyo Lift are the only team that instead of
+    // an emoji code, returns the emoji itself.
+    // This helper works around that so I don't have to think about it
     function insertEmoji(emojiString) {
       const code = parseInt(emojiString, 16);
       return code ? String.fromCodePoint(code) : emojiString;
     }
 
+    // Populate the home page with every active team
     function populateTeamsMenu() {
-      const xhr = new XMLHttpRequest();
-      xhr.open('get', '/getTeams');
-
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.onload = (xhr) => {
-        const res = JSON.parse(xhr.target.response);
-        console.log(res);
+      makeRequest('get', '/getTeams', (res) => {
         for(let division of Object.keys(res)) {
+          // count is used to add alternating colors
+          let count = -1;
           for(let team_id of Object.keys(res[division])) {
             // skip the key for the division's name
             if(team_id === 'name') continue;
+            count++;
             const team = res[division][team_id];
+            // get the appropriate div
             let div;
             switch(res[division].name) {
               case "Wild High":
@@ -83,54 +122,63 @@
                 continue;
             }
 
+            // The label is created but not displayed
             const label = document.createElement('label');
             label.innerHTML = team.fullName;
             label.htmlFor = team_id;
+            // Create the button for each team
             const input = document.createElement('button');
             input.type = 'button';
             input.id = team_id;
             input.value = `/team?team=${team_id}`;
             input.addEventListener('click', getTeamPage);
+            // Now let's style it!
             const code = parseInt(team.emoji, 16);
-            input.innerText = team.fullName + " " + (code ? String.fromCodePoint(code) : team.emoji);
+            input.innerText = (code ? String.fromCodePoint(code) : team.emoji) + " " + team.fullName;
+            input.style.color = team.secondaryColor;
+            input.style.backgroundColor = count % 2 ? 'rgba(30,30,30,.64)' : '#000';
 
             const p = document.createElement('p');
             div.appendChild(label);
             div.appendChild(input);
           }
         }
-      };
-
-      xhr.send();
+      });
     }
-
+    
+    // For hotswapping between the home page and the team page
     function clearContent(newActive) {
       activeDiv.style.display = 'none';
       activeDiv = newActive;
     }
 
+    // Add a list of players to a parent object
     function displayRoster(parent, roster) {
+      // First make the position header, which means parsing it's name from the id
+      let title = parent.id;
+      // Capitalize the first letter
+      title = title[0].toUpperCase() + title.slice(1);
+      const h3 = document.createElement('h3');
+      h3.innerHTML = title;
+      parent.appendChild(h3);
+      
+      // Now add the players
       const lineup = Object.keys(roster);
+      let count = -1;
       for(const player of lineup) {
+        count++;
         const p = document.createElement('button');
         p.innerText = roster[player].name;
         p.value = `/player?id=${roster[player].id}`;
         p.addEventListener('click', getPlayerPage);
+        p.style.backgroundColor = count % 2 ? 'rgba(30,30,30,.64)' : '#000';
         parent.appendChild(p);
       }
     }
 
+    // Get every player on the team's roster and display them
     function getPlayers(teamId) {
-      const xhr = new XMLHttpRequest();
-      xhr.open('get', `/players?team=${teamId}`);
-      xhr.setRequestHeader('Accept', 'application/json');
-
-      xhr.onload = (xhr) => {
-        //process data
-        const response = JSON.parse(xhr.target.response);
-        console.log(response);
-        // format and display
-
+      makeRequest('get', `/players?team=${teamId}`, (response) => {
         displayRoster(document.querySelector('#lineup'), response.lineup);
         displayRoster(document.querySelector('#rotation'), response.rotation);
         if(response.bullpen) {
@@ -139,36 +187,24 @@
         if (response.bench) {
           displayRoster(document.querySelector('#bench'), response.bench);
         }
-      }
 
-
-      xhr.send();
+        document.querySelector('#roster-loading').style.display = 'none';
+      });
     }
 
+    // Display the player information when the player's button is clicked
     function getPlayerPage(e) {
-      const xhr = new XMLHttpRequest();
-      xhr.open('get', e.target.value);
-      xhr.setRequestHeader('Accept', 'application/json');
-
-      xhr.onload = (xhr) => {
-        const response = JSON.parse(xhr.target.response);
+      makeRequest('get', e.target.value, (response) => {
         currentPlayer = response;
         currentAddId = response.id;
 
         populatePlayerInfo(response);
-      }
-
-      xhr.send();
+      });
     }
 
+    // Display the team information when the team's button is clicked
     function getTeamPage(e) {
-      const xhr = new XMLHttpRequest();
-      xhr.open('get', e.target.value);
-      xhr.setRequestHeader('Accept', 'application/json');
-
-      xhr.onload = (xhr) => {
-        // process data
-        const response = JSON.parse(xhr.target.response);
+      makeRequest('get', e.target.value, (response) => {
         currentTeam = response;
         currentAddId = response.id;
         console.log(response);
@@ -181,11 +217,10 @@
         getPlayers(response.id);
         clearContent(teamPage);
         teamPage.style.display = getComputedStyle(document.documentElement,null).getPropertyValue('--team-display');
-      };
-
-      xhr.send();
+      });
     }
 
+    // Exactly what it sounds like. Fills out the content section with a team's information
     function populateTeamInfo(team) {
       const teamName = document.querySelector('#team-name');
       const emoji = insertEmoji(team.emoji);
@@ -198,16 +233,16 @@
       rosterName.value = team.id;
     }
 
+    // Exactly what it sounds like. Fills out the content section with a player's information
     function populatePlayerInfo(player) {
       getLore(player.id);
       const teamName = document.querySelector('#team-name');
       teamName.innerHTML = player.name;
       const slogan = document.querySelector('#slogan');
       slogan.style.display = 'none';
-      const about = document.querySelector('#about');
-      about.innerHTML = 'Information about ' + player.name;
     }
 
+    // Remove every rumor from the screen
     function removeLoreNodes() {
       const entries = document.querySelector('#entries');
       while(entries.hasChildNodes()) {
@@ -215,13 +250,9 @@
       }
     }
 
+    // Get the lore for a player or team and display it to the screen
     function getLore(id) {
-      const xhr = new XMLHttpRequest();
-      xhr.open('get', `/lore?id=${id}`);
-
-      xhr.onload = (xhr) => {
-        const response = JSON.parse(xhr.target.response);
-        console.log(response);
+      makeRequest('get', `/lore?id=${id}`, (response) => {
         const keys = Object.keys(response);
         const entries = document.querySelector('#entries');
         removeLoreNodes();
@@ -234,13 +265,7 @@
           entries.appendChild(h4);
           entries.appendChild(p);
         });
-      };
-
-      xhr.send();
-    }
-
-    function addLore(e) {
-      
+      });
     }
 
     window.onload = init;
@@ -254,32 +279,29 @@
   <section id="content">
     <div id="home-wrapper">
       <div id="wild-high">
-        <h2>Wild High</h2>
+        <h2 class="division-heading">Wild High</h2>
       </div>
       <div id="mild-high">
-        <h2>Mild High</h2>
+        <h2 class="division-heading">Mild High</h2>
       </div>
       <div id="wild-low">
-        <h2>Wild Low</h2>
+        <h2 class="division-heading">Wild Low</h2>
       </div>
       <div id="mild-low">
-        <h2>Mild Ligh</h2>
+        <h2 class="division-heading">Mild High</h2>
       </div>
     </div>
     <div id="content-page-wrapper">
       <aside id="players">
         <h3 id="roster-team">Name</h3>
+        <div id="roster-loading">Loading roster...</div>
         <div id="lineup">
-          <h3>Lineup</h3>
         </div>
         <div id="rotation">
-          <h3>Rotation</h3>
         </div>
         <div id="bullpen">
-          <h3>Bullpen</h3>
         </div>
         <div id="bench">
-          <h3>Bench</h3>
         </div>
       </aside>
       <div id="content-page-main">
@@ -287,10 +309,10 @@
           <h1 id="team-name">Team Name</h1>
           <h2 id="slogan">Slogan!</h2>
         </div>
-        <h3 id="about-heading">About</h3>
-        <p id="about"></p>
-        <h3 id="entries-heading">Rumors</h3>
-        <button id="entries-add">Add Rumor</button>
+        <span id="header-row">
+          <h3 id="entries-heading">Rumors</h3>
+          <button id="entries-add">Add Rumor</button>
+        </span>
         <div id="entries">
 
         </div>
@@ -301,10 +323,14 @@
     <form id="modal-content">
       <div id="modal-header">Add Rumor</div>
       <div id="modal-body">
-        <label for="title">Enter the title of your rumor:</label>
-        <input id="title" type="text" />
-        <label for="rumor">Type your rumor below:</label>
-        <textarea name="rumor" rows="10" cols="100"></textarea>
+        <div id="title-section">
+          <label for="title">Enter the title of your rumor:</label>
+          <input id="title" type="text" />
+        </div>
+        <div id="rumor-section">
+          <label for="rumor">Type your rumor below:</label>
+          <textarea name="rumor" rows="10" cols="100"></textarea>
+        </div>
       </div>
       <div id="modal-footer">
         <input type="button" id="cancel" value="Cancel"></input>
