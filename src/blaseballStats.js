@@ -66,7 +66,7 @@ async function loadTeams() {
 }
 
 // Query the blaseball api to get every player from a certain position
-// This is done to keep the number of ids in a single request relatively low, 
+// This is done to keep the number of ids in a single request relatively low,
 // otherwise the blaseball database gets unhappy
 async function loadRoster(position, teamId) {
   const returnValue = await queryBlaseballAPI(`players?ids=${teamsUnsorted[teamId][position].join()}`);
